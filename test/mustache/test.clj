@@ -103,6 +103,14 @@
                 (=
                  (render-to-string "{{#person}}Hi {{name}}!{{/person}}", {:person {:name "Waldo"}})
                  "Hi Waldo!"))
+            (it "renders data from a hash-map as well as from the outer context"
+                (=
+                 (render-to-string "{{#person}}{{greeting}} {{name}}{{/person}}", {:greeting "Hello", :person {:name "Waldo"}})
+                 "Hello Waldo"))
+            (it "prefers data from the hash-map over data from the outer context"
+                (=
+                 (render-to-string "Outside: {{name}}, {{#person}}Inside: {{name}}{{/person}}", {:name "Anonymous", :person {:name "Waldo"}})
+                 "Outside: Anonymous, Inside: Waldo"))
             (it "does not render a section for a non-existing value"
                 (=
                  (render-to-string "a{{#b}}b{{/b}}c", {})
@@ -111,8 +119,47 @@
                 (=
                  (render-to-string "<ul>{{#crew}}<li>{{name}}</li>{{/crew}}</ul>", {:crew [{:name "Mal"}, {:name "Zoe"}, {:name "Wash"}]})
                  "<ul><li>Mal</li><li>Zoe</li><li>Wash</li></ul>"))
-            (it "renders values from the outer context for boolean section value"
+            (it "can render data from the item as well as the outer context inside a section"
+                (=
+                 (render-to-string "{{#crew}}* {{name}}, {{role}} of {{ship}}\n{{/crew}}",
+                                   {:ship "Serenity", :crew [{:name "Mal", :role "Captain"}
+                                                             {:name "Wash", :role "Pilot"}
+                                                             {:name "Kaylee", :role "Mechanic"}]})
+                 "* Mal, Captain of Serenity\n* Wash, Pilot of Serenity\n* Kaylee, Mechanic of Serenity\n"))
+            (it "prefers data from the item over data from the outer context"
+                (=
+                 (render-to-string "{{#people}}* {{name}}, {{age}}\n{{/people}}" {:age "unknown",
+                                                                                  :people [{:name "Alice", :age 28}
+                                                                                           {:name "Bob"}
+                                                                                           {:name "Chuck", :age 52}]})
+                 "* Alice, 28\n* Bob, unknown\n* Chuck, 52\n"))
+            (it "renders values from the outer context for boolean true section value"
                 (=
                  (render-to-string "Hello {{name}}\nYou have just won ${{value}}!\n{{#in_ca}}\nWell, ${{taxed_value}}, after taxes.\n{{/in_ca}}\n",
                                    {:name "Chris", :value 10000, :taxed_value (* 10000 0.6), :in_ca true})
-                 "Hello Chris\nYou have just won $10000!\nWell, $6000.0, after taxes.\n"))))
+                 "Hello Chris\nYou have just won $10000!\nWell, $6000.0, after taxes.\n"))
+            (it "renders nothing for a false section value"
+                (=
+                 (render-to-string "Show {{#display?}}Don't show{{/display?}}" {:display? false})
+                 "Show "))
+            (it "renders nothing for an empty collection"
+                (=
+                 (render-to-string "<ul>{{#items}}<li>{{name}}</li>{{/items}}</ul>" {:items []})
+                 "<ul></ul>")))
+          (testing "inverted sections"
+            (it "renders for an empty collection"
+                (=
+                 (render-to-string "{{^items}}No results found{{/items}}" {:items []})
+                 "No results found"))
+            (it "renders for a false value"
+                (=
+                 (render-to-string "{{^customer?}}{{name}} is not a customer{{/customer?}}" {:name "Joe", :customer? false})
+                 "Joe is not a customer"))
+            (it "renders nothing for a non-empty collection"
+                (=
+                 (render-to-string "{{^items}}No items{{/items}}" {:items ["something!"]})
+                 ""))
+            (it "renders nothing for a non-false value"
+                (=
+                 (render-to-string "{{^foo}}Don't show{{/foo}}" {:foo "something!"})
+                 ""))))

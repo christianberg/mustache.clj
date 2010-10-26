@@ -54,6 +54,7 @@ the TODO section):
 ** Don't render for false values
 ** Render once for maps, changing the context scope
 ** Render for each item in a collection
+* Inverted sections
 * Changing of tag delimiters
 * Comments
 
@@ -62,7 +63,6 @@ the TODO section):
 The following features are not yet implemented:
 
 * Unescaped output
-* Inverted sections
 * Partials
 * Lambdas/Callbacks
 * Loading Templates/Partials from filesystem/URL/classpath

@@ -129,13 +129,16 @@
            (print (escape-html (context (:name item)))))
 
 (defmethod render-item :section [item context]
-           (if-let [value (context (:name item))]
-             (cond
-              (map? value) (dorun (map #(render-item % value) (:content item)))
-              (coll? value) (dorun (for [i value
-                                       tmpl (:content item)]
-                                   (render-item tmpl i)))
-              :default (dorun (map #(render-item % context) (:content item))))))
+           (let [value (context (:name item))]
+             (when (and (not (:inverted item)) value (not (and (coll? value) (empty? value))))
+               (cond
+                (map? value) (dorun (map #(render-item % (merge context value)) (:content item)))
+                (coll? value) (dorun (for [i value
+                                           tmpl (:content item)]
+                                       (render-item tmpl (merge context i))))
+                :default (dorun (map #(render-item % context) (:content item)))))
+             (when (and (:inverted item) (or (not value) (empty? value)))
+               (dorun (map #(render-item % context) (:content item))))))
 
 (defn compile [input]
   (let [template-items (parse input)]

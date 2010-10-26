@@ -48,7 +48,7 @@ only done once.
 The following Mustache features are currently implemented (also see
 the TODO section):
 
-* Variable tags (Beware: values are not HTML-escaped yet!)
+* Variable tags (always HTML-escaped)
 * Sections
 ** Render once for true values
 ** Don't render for false values
@@ -61,7 +61,6 @@ the TODO section):
 
 The following features are not yet implemented:
 
-* HTML escaping of variable values
 * Unescaped output
 * Inverted sections
 * Partials
@@ -72,6 +71,12 @@ The following features are not yet implemented:
 
 For now, get the source and play with it. I will push a package
 to clojars as soon as the most important features are complete.
+
+## Credits
+
+* Mustache is Copyright (C) 2009 Chris Wanstrath
+* HTML escaping code is copied from
+  [hiccup](http://github.com/weavejester/hiccup) by James Reeves
 
 ## License
 

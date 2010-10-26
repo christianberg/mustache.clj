@@ -91,6 +91,10 @@
               (=
                (render-to-string "{{foo}}" {:foo "bar"})
                "bar"))
+          (testing "escaping"
+            (it "escapes special characters"
+                (= (render-to-string "{{foo}}" {:foo "<>&\""})
+                   "&lt;&gt;&amp;&quot;")))
           (testing "sections"
             (it "skips whitespace after section tags"
                 (= (render-to-string "foo\n{{#show?}}   \nbar\n{{/show?}}\nbaz", {:show? true})

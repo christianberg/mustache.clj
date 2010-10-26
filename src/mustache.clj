@@ -1,9 +1,20 @@
 (ns mustache
   "Mustache template renderer"
+  (:use [clojure.contrib.java-utils :only (as-str)])
   (:import (java.io StringReader PushbackReader)))
 
 (def otag)
 (def ctag)
+
+;; Copied from weavejester's hiccup
+(defn escape-html
+  "Change special characters into HTML character entities."
+  [text]
+  (.. ^String (as-str text)
+    (replace "&"  "&amp;")
+    (replace "<"  "&lt;")
+    (replace ">"  "&gt;")
+    (replace "\"" "&quot;")))
 
 (defn parse-reader [reader]
   (binding [otag "{{"
@@ -115,7 +126,7 @@
            (print (:content item)))
 
 (defmethod render-item :var [item context]
-           (print (context (:name item))))
+           (print (escape-html (context (:name item)))))
 
 (defmethod render-item :section [item context]
            (if-let [value (context (:name item))]

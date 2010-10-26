@@ -48,6 +48,8 @@ only done once.
 The following Mustache features are currently implemented (also see
 the TODO section):
 
+* Templates can be provided as strings, URIs, Files, Streams, local
+  file names or classpath resource names
 * Variable tags (always HTML-escaped)
 * Sections
 ** Render once for true values
@@ -65,7 +67,6 @@ The following features are not yet implemented:
 * Unescaped output
 * Partials
 * Lambdas/Callbacks
-* Loading Templates/Partials from filesystem/URL/classpath
 
 ## Installation
 

@@ -11,7 +11,7 @@
 (describe parse-low-level
           (testing "basic parsing"
             (it "parses a trivial static template"
-                (= (parse-low-level "Hello") [{:type :static, :content "Hello"}]))
+                (= (parse-low-level "Hello World") [{:type :static, :content "Hello World"}]))
             (it "parses a variable tag"
                 (= (parse-low-level "{{foo}}") [{:type :tag, :content "foo"}]))
             (it "ignores single brackets"
@@ -37,7 +37,7 @@
 (describe parse-transform
           (testing "basic parsing"
             (it "parses static text"
-                (= (parse-transform "Hello") [{:type :static, :content "Hello"}]))
+                (= (parse-transform "Hello World") [{:type :static, :content "Hello World"}]))
             (it "parses a variable tag"
                 (= (parse-transform "{{foo}}") [{:type :var, :name :foo}]))
             (it "parses a comment"
@@ -54,7 +54,7 @@
 (describe parse
           (testing "basic parsing"
             (it "parses static text"
-                (= (parse "Hello") [{:type :static, :content "Hello"}]))
+                (= (parse "Hello World") [{:type :static, :content "Hello World"}]))
             (it "parses a variable tag"
                 (= (parse "{{foo}}") [{:type :var, :name :foo}]))
             (it "parses a comment"
@@ -82,7 +82,7 @@
 
 (describe render-to-string
           (it "renders trivial static template"
-              (= (render-to-string "Hello" nil) "Hello"))
+              (= (render-to-string "Hello World" nil) "Hello World"))
           (it "renders a simple template"
               (=
                (render-to-string "Hello {{name}}!" {:name "World"})
@@ -96,9 +96,12 @@
                 (= (render-to-string "{{foo}}" {:foo "<>&\""})
                    "&lt;&gt;&amp;&quot;")))
           (testing "sections"
-            (it "skips whitespace after section tags"
+            (it "skips whitespace after section tag"
                 (= (render-to-string "foo\n{{#show?}}   \nbar\n{{/show?}}\nbaz", {:show? true})
                    "foo\nbar\nbaz"))
+            (it "skips whitespace between beginning of line and section tag"
+                (= (render-to-string "  <ul>\n  {{#items}}\n    <li>{{name}}</li>\n  {{/items}}\n  </ul>\n" {:items {:name "foo"}})
+                   "  <ul>\n    <li>foo</li>\n  </ul>\n"))
             (it "renders a section for a hash-map"
                 (=
                  (render-to-string "{{#person}}Hi {{name}}!{{/person}}", {:person {:name "Waldo"}})
@@ -162,4 +165,25 @@
             (it "renders nothing for a non-false value"
                 (=
                  (render-to-string "{{^foo}}Don't show{{/foo}}" {:foo "something!"})
-                 ""))))
+                 "")))
+          (testing "template files"
+            (given [input {:head {:title "Crew list"}
+                           :ship "Serenity"
+                           :crew [{:name "Mal" :position "Captain"}
+                                  {:name "Zoe" :position "First Officer"}
+                                  {:name "Wash" :position "Pilot"}
+                                  {:name "Kaylee" :position "Mechanic"}
+                                  {:name "Jayne" :position "Muscle"}
+                                  {:name "Inara" :position "Companion"}
+                                  {:name "Book" :position "Shepherd"}
+                                  {:name "Simon" :position "Doctor"}
+                                  {:name "River" :position "Crazy Girl"}]}
+                    output (slurp "test/fixtures/simple.out.html")]
+                   (it "renders a template from a local file (relative path)"
+                       (=
+                        (render-to-string "test/fixtures/simple.mustache.html" input)
+                        output))
+                   (it "renders a template from a classpath resource"
+                       (=
+                        (render-to-string "simple.mustache.html" input)
+                        output)))))

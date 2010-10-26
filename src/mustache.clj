@@ -1,7 +1,8 @@
 (ns mustache
   "Mustache template renderer"
-  (:use [clojure.contrib.java-utils :only (as-str)])
-  (:import (java.io StringReader PushbackReader)))
+  (:use [clojure.contrib.java-utils :only (as-str)]
+        [clojure.java.io :as io :only (reader resource)])
+  (:import (java.io StringReader PushbackReader FileNotFoundException)))
 
 (def otag)
 (def ctag)
@@ -64,11 +65,16 @@
                      (recur (conj token c) model state))))
              :default (recur (conj token c) model state))))))))
 
-(defprotocol Parse-Template
-  (parse-low-level [input]))
-
-(extend-protocol Parse-Template
-  String (parse-low-level [input] (parse-reader (PushbackReader. (StringReader. input)))))
+(defn parse-low-level [input]
+  (with-open [r (PushbackReader.
+                 (if (or (> (.indexOf input (int \newline)) -1)
+                         (> (.indexOf input (int \{)) -1)
+                         (> (.indexOf input (int \space)) -1))
+                   (StringReader. input)
+                   (try (io/reader input)
+                        (catch FileNotFoundException e
+                          (io/reader (io/resource input))))))]
+    (parse-reader r)))
 
 (defn parse-transform [input]
   (for [item (parse-low-level input)]
@@ -85,20 +91,33 @@
                      (= modifier ">") {:type :partial, :name (keyword name)}))))))
 
 (defn remove-leading-whitespace-line [s]
-  (apply str
-         (let [out (drop-while #(and (java.lang.Character/isWhitespace %) (not (= % \newline))) s)]
-           (if (= (first out) \newline)
-             (rest out)
-             out))))
+  (let [out (drop-while #(and (java.lang.Character/isWhitespace %) (not (= % \newline))) s)]
+    (if (= (first out) \newline)
+      (apply str (rest out))
+      s)))
+
+(defn remove-trailing-whitespace-line [s]
+  (let [out (drop-while #(and (java.lang.Character/isWhitespace %) (not (= % \newline))) (reverse s))]
+    (if (= (first out) \newline)
+      (apply str (reverse out))
+      s)))
 
 (defn remove-whitespace-after-section-tags [items]
   (cons (first items)
         (map (fn [this before]
-               (if (and (= (:type this) :static) (or (= (:type before) :section-start) (= ( :type before) :section-end)))
+               (if (and (= (:type this) :static) (or (= (:type before) :section-start) (= (:type before) :section-end)))
                  (assoc this :content (remove-leading-whitespace-line (this :content)))
                  this))
              (rest items)
              items)))
+
+(defn remove-whitespace-before-section-tags [items]
+  (map (fn [this after]
+         (if (and (= (:type this) :static) (or (= (:type after) :section-start) (= (:type after) :section-end)))
+           (assoc this :content (remove-trailing-whitespace-line (this :content)))
+           this))
+       items
+       (concat (rest items) [{}])))
 
 (defn recursive-section-handler [items]
   (loop [items items
@@ -119,7 +138,7 @@
         out))))
 
 (defn parse [input]
-  (recursive-section-handler (remove-whitespace-after-section-tags (parse-transform input))))
+  (recursive-section-handler (remove-whitespace-after-section-tags (remove-whitespace-before-section-tags (parse-transform input)))))
 
 (defmulti render-item :type)
 (defmethod render-item :static [item context]

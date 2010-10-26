@@ -1,0 +1,19 @@
+<html>
+  {{#head}}
+  <head>
+    <title>{{title}}</title>
+  </head>
+  {{/head}}
+  <body>
+    <h1>Crew of {{ship}}</h1>
+    <table>
+      <tr><th>Name</th><th>Position</th></tr>
+      {{#crew}}
+      <tr><td>{{name}}</td><td>{{position}}</td></tr>
+      {{/crew}}
+      {{^crew}}
+      <tr><td span="2"><em>No Crew!</em></td></tr>
+      {{/crew}}
+    </table>
+  </body>
+</html>
